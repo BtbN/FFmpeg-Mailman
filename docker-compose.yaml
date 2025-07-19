@@ -1,0 +1,94 @@
+services:
+  core:
+    image: mailman:latest
+    pull_policy: build
+    build: mailman
+    command: core
+    restart: unless-stopped
+    volumes:
+      - ./core:/opt/mailman/
+    stop_grace_period: 30s
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DATABASE_NAME=${DATABASE_NAME}
+      - DATABASE_USER=${DATABASE_USER}
+      - DATABASE_PASS=${DATABASE_PASS}
+      - HYPERKITTY_API_KEY=${HYPERKITTY_API_KEY}
+      - REST_ADMIN_USER=${REST_ADMIN_USER}
+      - REST_ADMIN_PASS=${REST_ADMIN_PASS}
+      - SITE_OWNER=${SITE_OWNER}
+    extra_hosts:
+      - host.docker.internal:host-gateway
+      # This needs to be defined in /etc/hosts to point to 127.0.0.1, so postfix can reach the LMTP service.
+      # Also remember to set "lmtp_host_lookup = native" so postfix actually looks at the hosts file.
+      - mailman.docker.local:0.0.0.0
+    ports: # These both need to match in port inside and outside, cause mailman generates map files for the MTA with these ports
+      - 127.0.0.1:8001:8001 # REST API
+      - 127.0.0.1:8024:8024 # LMTP
+    networks:
+      - backend
+      - frontend
+
+  web:
+    image: mailman:latest
+    pull_policy: build
+    build: mailman
+    command: web
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./web:/opt/mailman-web
+    environment:
+      - DATABASE_NAME=${DATABASE_NAME}
+      - DATABASE_USER=${DATABASE_USER}
+      - DATABASE_PASS=${DATABASE_PASS}
+      - HYPERKITTY_API_KEY=${HYPERKITTY_API_KEY}
+      - REST_ADMIN_USER=${REST_ADMIN_USER}
+      - REST_ADMIN_PASS=${REST_ADMIN_PASS}
+      - SECRET_KEY=${DJANGO_SECRET_KEY}
+      - SMTP_HOST=host.docker.internal
+      - SMTP_PORT=25
+      - SERVE_FROM_DOMAIN=${SERVE_FROM_DOMAIN}
+      - DJANGO_ALLOWED_HOSTS=${SERVE_FROM_DOMAIN}
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    ports:
+      - 127.0.0.1:9080:8080 # uwsgi
+    networks:
+      - backend
+      - frontend
+
+  db:
+    image: mariadb:11
+    restart: unless-stopped
+    environment:
+      - MARIADB_AUTO_UPGRADE=1
+      - MARIADB_RANDOM_ROOT_PASSWORD=yes
+      - MARIADB_DATABASE=${DATABASE_NAME}
+      - MARIADB_USER=${DATABASE_USER}
+      - MARIADB_PASSWORD=${DATABASE_PASS}
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --init-connect='SET NAMES UTF8;'
+    ulimits:
+      memlock: "262144"
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  db-data:
+
+networks:
+  frontend:
+  backend:
+    external: false
