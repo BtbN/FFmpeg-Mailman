@@ -24,8 +24,7 @@ services:
       # This needs to be defined in /etc/hosts to point to 127.0.0.1, so postfix can reach the LMTP service.
       # Also remember to set "lmtp_host_lookup = native" so postfix actually looks at the hosts file.
       - mailman.docker.local:0.0.0.0
-    ports: # These both need to match in port inside and outside, cause mailman generates map files for the MTA with these ports
-      - 127.0.0.1:8001:8001 # REST API
+    ports: # The port needs to match inside and outside, cause mailman generates map files for the MTA with it
       - 127.0.0.1:8024:8024 # LMTP
     networks:
       - backend
