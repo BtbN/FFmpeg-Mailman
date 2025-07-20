@@ -65,6 +65,7 @@ services:
     pull_policy: build
     build: mailman
     command: logrotate
+    restart: unless-stopped
     volumes:
       - ./web:/opt/mailman-web/
       - ./core:/opt/mailman/
