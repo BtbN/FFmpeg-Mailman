@@ -194,7 +194,7 @@ setup_web() {
     fi
 
     cd /opt/mailman-web
-    mkdir -p logs static diskcache
+    mkdir -p logs static diskcache xapian_index
     chown -R mailman:mailman /opt/mailman-web
 
     export MAILMAN_WEB_CONFIG=/etc/mailman3/settings.py
