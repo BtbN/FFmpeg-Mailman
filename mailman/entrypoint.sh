@@ -57,17 +57,6 @@ setup_core() {
         exit 1
     fi
 
-    if [[ -n "$HYPERKITTY_API_KEY" ]]; then
-        {
-            echo "[general]"
-            echo "api_key: ${HYPERKITTY_API_KEY}"
-            echo
-        } >> /etc/mailman3/mailman-hyperkitty.cfg
-    else
-        echo "Missing site-owner"
-        exit 1
-    fi
-
     if [[ -n "$LMTP_HOST" || -n "$LMTP_PORT" || -n "$SMTP_HOST" || -n "$SMTP_PORT" || -n "$SMTP_USER" || -n "$SMTP_PASS" || -n "$SMTP_SECURE_MODE" || -n "$SMTP_VERIFY_HOSTNAME" || -n "$SMTP_VERIFY_CERT" ]]; then
         {
             echo "[mta]"
@@ -82,6 +71,16 @@ setup_core() {
             [[ -z "$SMTP_VERIFY_CERT" ]] || echo "smtp_verify_cert: ${SMTP_VERIFY_CERT}"
             echo
         } >> /etc/mailman3/mailman.cfg
+    fi
+
+    if [[ -n "$HYPERKITTY_API_KEY" ]]; then
+        {
+            echo "api_key: ${HYPERKITTY_API_KEY}"
+            echo
+        } >> /etc/mailman3/mailman-hyperkitty.cfg
+    else
+        echo "Missing site-owner"
+        exit 1
     fi
 
     chown -R mailman:mailman /opt/mailman
