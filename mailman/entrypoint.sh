@@ -232,6 +232,9 @@ elif [[ "$1" == "web" ]]; then
     ensure_mysql
     setup_web
     run_web "$@"
+elif [[ "$1" == "logrotate" ]]; then
+    shift
+    exec sudo -n -u mailman -- /logrotate.sh "$@"
 else
     export MAILMAN_CONFIG_FILE=/etc/mailman3/mailman.cfg
     export MAILMAN_WEB_CONFIG=/etc/mailman3/settings.py

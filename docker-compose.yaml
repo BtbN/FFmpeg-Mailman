@@ -40,7 +40,7 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - ./web:/opt/mailman-web
+      - ./web:/opt/mailman-web/
     environment:
       - DATABASE_NAME=${DATABASE_NAME_WEB}
       - DATABASE_USER=${DATABASE_USER_WEB}
@@ -59,6 +59,15 @@ services:
     networks:
       - backend
       - frontend
+
+  logrotate:
+    image: mailman:latest
+    pull_policy: build
+    build: mailman
+    command: logrotate
+    volumes:
+      - ./web:/opt/mailman-web/
+      - ./core:/opt/mailman/
 
   db:
     image: mariadb:11

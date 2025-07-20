@@ -30,7 +30,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -y update && \
     apt-get -y full-upgrade && \
     apt-get -y install --no-install-recommends \
-        sassc node-less gettext zlib1g libmariadb3 sudo nano && \
+        sassc node-less gettext zlib1g libmariadb3 logrotate sudo nano && \
     apt-get -y clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -48,7 +48,8 @@ RUN mkdir /opt/mailman /opt/mailman-web && \
     chown mailman:mailman /opt/mailman /opt/mailman-web
 
 COPY entrypoint.sh /entrypoint.sh
-COPY mailman.cfg mailman-postfix.cfg mailman-hyperkitty.cfg mailman-gunicorn.cfg uwsgi.ini settings.py /etc/mailman3/
+COPY logrotate.sh /logrotate.sh
+COPY mailman.cfg mailman-postfix.cfg mailman-hyperkitty.cfg mailman-gunicorn.cfg uwsgi.ini settings.py logrotate.conf /etc/mailman3/
 COPY mailman.cfg /etc/mailman3/mailman.cfg.proto
 COPY mailman-hyperkitty.cfg /etc/mailman3/mailman-hyperkitty.cfg.proto
 
