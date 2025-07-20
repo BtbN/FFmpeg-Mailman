@@ -1,0 +1,27 @@
+FFmpeg Mailman3 setup.
+
+
+Use the provided systemd services to run postmap on the hash files:
+
+systemctl enable --now postmap@$(systemd-escape -p /opt/mailman/core/data/postfix_domains).path
+systemctl enable --now postmap@$(systemd-escape -p /opt/mailman/core/data/postfix_lmtp).path
+
+
+Also, you need to add an entry to 127.0.0.1 in /etc/hosts so postfix can find mailman:
+
+127.0.0.1 mailman.docker.local
+
+
+The postfix config then looks something like this:
+
+transport_maps = hash:/opt/mailman/core/data/postfix_lmtp
+local_recipient_maps = proxy:unix:passwd.byname hash:/opt/mailman/core/data/postfix_lmtp $alias_maps
+relay_domains = hash:/opt/mailman/core/data/postfix_domains
+lmtp_host_lookup = native
+recipient_delimiter = +
+unknown_local_recipient_reject_code = 550
+owner_request_special = no
+
+Specially lmtp_host_lookup is important, since postfix by default does not look at /etc/hosts.
+For the exact layout of local_recipient_maps look at postconf output for it prior to adding anything.
+Add the new hash entry after the passwd entry, but before $alias_maps.
