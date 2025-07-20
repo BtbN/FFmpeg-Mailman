@@ -173,16 +173,18 @@ setup_web() {
 
     if [[ -n "$SERVE_FROM_DOMAINS" ]]; then
         {
+            IFS=', ' read -ra DOMAINS <<< "$SERVE_FROM_DOMAINS"
+
             echo "ALLOWED_HOSTS = ["
-            while IFS=, read -r DOMAIN; do
+            for DOMAIN in "${DOMAINS[@]}"; do
                 echo "    '${DOMAIN}',"
-            done <<<"$SERVE_FROM_DOMAINS"
+            done
             echo "]"
 
             echo "CSRF_TRUSTED_ORIGINS = ["
-            while IFS=, read -r DOMAIN; do
+            for DOMAIN in "${DOMAINS[@]}"; do
                 echo "    'https://${DOMAIN}',"
-            done <<<"$SERVE_FROM_DOMAINS"
+            done
             echo "]"
 
             echo
