@@ -1,6 +1,7 @@
 # Mailman Web configuration file.
 
 import os
+from socket import gethostbyname
 
 from mailman_web.settings.base import *
 from mailman_web.settings.mailman import *
@@ -46,7 +47,7 @@ DISKCACHE_PATH = '/opt/mailman-web/diskcache'
 DISKCACHE_SIZE = 1024 * 1024 * 1024
 
 MAILMAN_REST_API_URL = 'http://core:8001'
-MAILMAN_ARCHIVER_FROM = 'core'
+MAILMAN_ARCHIVER_FROM = (gethostbyname('core'),'core')
 
 ALLOWED_HOSTS = []
 CSRF_TRUSTED_ORIGINS = []
