@@ -1,19 +1,34 @@
 #!/bin/bash
 set -eo pipefail
 
+ensure_mysql() {
+    if [[ -z "$DATABASE_USER" || -z "$DATABASE_PASS" || -z "$DATABASE_NAME" ]]; then
+        echo "Missing database credentials"
+        return
+    fi
+
+    DATABASE_SERV="${DATABASE_SERV:-db}"
+    DATABASE_PORT="${DATABASE_PORT:-3306}"
+
+    until python3 -c "import MySQLdb; MySQLdb.connect(host='${DATABASE_SERV}', port=${DATABASE_PORT}, user='${DATABASE_USER}', passwd='${DATABASE_PASS}', connect_timeout=1).cursor().execute('SELECT 1')"; do
+        echo "Waiting for mysql server..."
+        sleep 1
+    done
+}
+
 setup_core() {
-    cat /etc/mailman.cfg.proto > /etc/mailman.cfg
-    cat /etc/mailman-hyperkitty.cfg.proto > /etc/mailman-hyperkitty.cfg
+    cp /etc/mailman3/mailman.cfg{.proto,}
+    cp /etc/mailman3/mailman-hyperkitty.cfg{.proto,}
 
     if [[ -n "$DATABASE_USER" && -n "$DATABASE_PASS" && -n "$DATABASE_NAME" ]]; then
-        DATABASE_SERV="${DATABASE_SERV:-db}"
-        DATABASE_EXTRA_ARGS="${DATABASE_EXTRA_ARGS:-}"
         {
+            DATABASE_SERV="${DATABASE_SERV:-db}"
+            DATABASE_PORT="${DATABASE_PORT:-3306}"
             echo "[database]"
             echo "class: mailman.database.mysql.MySQLDatabase"
-            echo "url: mysql+mysqldb://${DATABASE_USER}:${DATABASE_PASS}@${DATABASE_SERV}:3306/${DATABASE_NAME}?charset=utf8mb4&use_unicode=1${DATABASE_EXTRA_ARGS}"
+            echo "url: mysql+mysqldb://${DATABASE_USER}:${DATABASE_PASS}@${DATABASE_SERV}:${DATABASE_PORT}/${DATABASE_NAME}?charset=utf8mb4&use_unicode=1"
             echo
-        } >> /etc/mailman.cfg
+        } >> /etc/mailman3/mailman.cfg
     else
         echo "Missing database credentials"
         exit 1
@@ -25,7 +40,7 @@ setup_core() {
             echo "admin_user: ${REST_ADMIN_USER}"
             echo "admin_pass: ${REST_ADMIN_PASS}"
             echo
-        } >> /etc/mailman.cfg
+        } >> /etc/mailman3/mailman.cfg
     else
         echo "Missing rest admin credentials"
         exit 1
@@ -36,7 +51,7 @@ setup_core() {
             echo "[mailman]"
             echo "site_owner: ${SITE_OWNER}"
             echo
-        } >> /etc/mailman.cfg
+        } >> /etc/mailman3/mailman.cfg
     else
         echo "Missing site-owner"
         exit 1
@@ -47,7 +62,7 @@ setup_core() {
             echo "[general]"
             echo "api_key: ${HYPERKITTY_API_KEY}"
             echo
-        } >> /etc/mailman-hyperkitty.cfg
+        } >> /etc/mailman3/mailman-hyperkitty.cfg
     else
         echo "Missing site-owner"
         exit 1
@@ -66,40 +81,157 @@ setup_core() {
             [[ -z "$SMTP_VERIFY_HOSTNAME" ]] || echo "smtp_verify_hostname: ${SMTP_VERIFY_HOSTNAME}"
             [[ -z "$SMTP_VERIFY_CERT" ]] || echo "smtp_verify_cert: ${SMTP_VERIFY_CERT}"
             echo
-        } >> /etc/mailman.cfg
+        } >> /etc/mailman3/mailman.cfg
     fi
 
     chown -R mailman:mailman /opt/mailman
 
     cd /opt/mailman
-    export MAILMAN_CONFIG_FILE=/etc/mailman.cfg
-    
+    export MAILMAN_CONFIG_FILE=/etc/mailman3/mailman.cfg
+
     sudo -n -u mailman -- mailman aliases
+}
+
+setup_web() {
+    rm -f /etc/mailman3/settings_docker.py
+
+    if [[ -n "$SMTP_HOST" || -n "$SMTP_PORT" || -n "$SMTP_USER" || -n "$SMTP_PASS" || -n "$SMTP_USE_TLS" || -n "$SMTP_USE_SSL" ]]; then
+        {
+            [[ -z "$SMTP_HOST" ]] || echo "EMAIL_HOST = ${SMTP_HOST}"
+            [[ -z "$SMTP_PORT" ]] || echo "EMAIL_PORT = ${SMTP_PORT}"
+            [[ -z "$SMTP_USER" ]] || echo "EMAIL_HOST_USER = ${SMTP_USER}"
+            [[ -z "$SMTP_PASS" ]] || echo "EMAIL_HOST_PASSWORD = ${SMTP_PASS}"
+            [[ -z "$SMTP_USE_TLS" ]] || echo "EMAIL_USE_TLS = ${SMTP_USE_TLS}"
+            [[ -z "$SMTP_USE_SSL" ]] || echo "EMAIL_USE_SSL = ${SMTP_USE_SSL}"
+            echo
+        } >> /etc/mailman3/settings_docker.py
+    fi
+
+    if [[ -n "$DATABASE_USER" && -n "$DATABASE_PASS" && -n "$DATABASE_NAME" ]]; then
+        {
+            DATABASE_SERV="${DATABASE_SERV:-db}"
+            DATABASE_PORT="${DATABASE_PORT:-3306}"
+            echo "DATABASES = {"
+            echo "    'default': {"
+            echo "        'ENGINE': 'django.db.backends.mysql',"
+            echo "        'NAME': '${DATABASE_NAME}',"
+            echo "        'USER': '${DATABASE_USER}',"
+            echo "        'PASSWORD': '${DATABASE_PASS}',"
+            echo "        'HOST': '${DATABASE_SERV}',"
+            echo "        'PORT': '${DATABASE_PORT}',"
+            echo "        'OPTIONS': {'charset': 'utf8mb4'}"
+            echo "    }"
+            echo "}"
+            echo
+        } >> /etc/mailman3/settings_docker.py
+    else
+        echo "Missing database credentials"
+        exit 1
+    fi
+
+    if [[ -n "$SECRET_KEY" ]]; then
+        {
+            echo "SECRET_KEY = '${SECRET_KEY}'"
+            echo
+        } >> /etc/mailman3/settings_docker.py
+    else
+        echo "Missing django's secret key"
+        exit 1
+    fi
+
+    if [[ -n "$HYPERKITTY_API_KEY" ]]; then
+        {
+            echo "MAILMAN_ARCHIVER_KEY = '${HYPERKITTY_API_KEY}'"
+            echo
+        } >> /etc/mailman3/settings_docker.py
+    else
+        echo "Missing hyperkitty API key"
+        exit 1
+    fi
+
+    if [[ -n "$REST_ADMIN_USER" && -n "$REST_ADMIN_PASS" ]]; then
+        {
+            echo "MAILMAN_REST_API_USER = '${REST_ADMIN_USER}'"
+            echo "MAILMAN_REST_API_PASS = '${REST_ADMIN_PASS}'"
+            echo
+        } >> /etc/mailman3/settings_docker.py
+    else
+        echo "Missing rest admin credentials"
+        exit 1
+    fi
+
+    if [[ -n "$DEFAULT_FROM_EMAIL" && -n "$SERVER_EMAIL" ]]; then
+        {
+            echo "DEFAULT_FROM_EMAIL = '${DEFAULT_FROM_EMAIL}'"
+            echo "SERVER_EMAIL = '${SERVER_EMAIL}'"
+            echo
+        } >> /etc/mailman3/settings_docker.py
+    else
+        echo "Missing server e-mail addresses"
+        exit 1
+    fi
+
+    if [[ -n "$SERVE_FROM_DOMAINS" ]]; then
+        {
+            echo "ALLOWED_HOSTS = ["
+            while IFS=, read -r DOMAIN; do
+                echo "    '${DOMAIN}',"
+            done <<<"$SERVE_FROM_DOMAINS"
+            echo "]"
+
+            echo "CSRF_TRUSTED_ORIGINS = ["
+            while IFS=, read -r DOMAIN; do
+                echo "    'https://${DOMAIN}',"
+            done <<<"$SERVE_FROM_DOMAINS"
+            echo "]"
+
+            echo
+        } >> /etc/mailman3/settings_docker.py
+    else
+        echo "No domains configured"
+        exit 1
+    fi
+
+    cd /opt/mailman-web
+    mkdir -p logs static diskcache
+    chown -R mailman:mailman /opt/mailman-web
+
+    export MAILMAN_WEB_CONFIG=/etc/mailman3/settings.py
+
+    pushd /usr/local/lib/python?.*/site-packages
+    mailman-web compilemessages
+    popd
+
+    sudo -n -u mailman -- mailman-web migrate
+
+    sudo -n -u mailman -- mailman-web collectstatic --noinput --clear
+    sudo -n -u mailman -- mailman-web compress --force
 }
 
 run_core() {
     cd /opt/mailman
-    export MAILMAN_CONFIG_FILE=/etc/mailman.cfg
+    export MAILMAN_CONFIG_FILE=/etc/mailman3/mailman.cfg
     exec sudo -n -u mailman -- master --force "$@"
-}
-
-setup_web() {
-    true
 }
 
 run_web() {
     cd /opt/mailman-web
-    exec sudo -n -u mailman -- uwsgi --init /etc/uwsgi.ini "$@"
+    export MAILMAN_WEB_CONFIG=/etc/mailman3/settings.py
+    exec sudo -n -u mailman -- uwsgi --ini /etc/mailman3/uwsgi.ini "$@"
 }
 
 if [[ "$1" == "core" ]]; then
     shift
+    ensure_mysql
     setup_core
     run_core "$@"
 elif [[ "$1" == "web" ]]; then
     shift
+    ensure_mysql
     setup_web
     run_web "$@"
 else
+    export MAILMAN_CONFIG_FILE=/etc/mailman3/mailman.cfg
+    export MAILMAN_WEB_CONFIG=/etc/mailman3/settings.py
     exec sudo -n -u mailman -- "$@"
 fi

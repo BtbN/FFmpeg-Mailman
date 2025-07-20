@@ -12,9 +12,9 @@ services:
       db:
         condition: service_healthy
     environment:
-      - DATABASE_NAME=${DATABASE_NAME}
-      - DATABASE_USER=${DATABASE_USER}
-      - DATABASE_PASS=${DATABASE_PASS}
+      - DATABASE_NAME=${DATABASE_NAME_CORE}
+      - DATABASE_USER=${DATABASE_USER_CORE}
+      - DATABASE_PASS=${DATABASE_PASS_CORE}
       - HYPERKITTY_API_KEY=${HYPERKITTY_API_KEY}
       - REST_ADMIN_USER=${REST_ADMIN_USER}
       - REST_ADMIN_PASS=${REST_ADMIN_PASS}
@@ -43,17 +43,16 @@ services:
     volumes:
       - ./web:/opt/mailman-web
     environment:
-      - DATABASE_NAME=${DATABASE_NAME}
-      - DATABASE_USER=${DATABASE_USER}
-      - DATABASE_PASS=${DATABASE_PASS}
+      - DATABASE_NAME=${DATABASE_NAME_WEB}
+      - DATABASE_USER=${DATABASE_USER_WEB}
+      - DATABASE_PASS=${DATABASE_PASS_WEB}
       - HYPERKITTY_API_KEY=${HYPERKITTY_API_KEY}
       - REST_ADMIN_USER=${REST_ADMIN_USER}
       - REST_ADMIN_PASS=${REST_ADMIN_PASS}
       - SECRET_KEY=${DJANGO_SECRET_KEY}
-      - SMTP_HOST=host.docker.internal
-      - SMTP_PORT=25
-      - SERVE_FROM_DOMAIN=${SERVE_FROM_DOMAIN}
-      - DJANGO_ALLOWED_HOSTS=${SERVE_FROM_DOMAIN}
+      - SERVE_FROM_DOMAINS=${SERVE_FROM_DOMAINS}
+      - SERVER_EMAIL=${SERVER_EMAIL}
+      - DEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL}
     extra_hosts:
       - host.docker.internal:host-gateway
     ports:
@@ -68,9 +67,9 @@ services:
     environment:
       - MARIADB_AUTO_UPGRADE=1
       - MARIADB_RANDOM_ROOT_PASSWORD=yes
-      - MARIADB_DATABASE=${DATABASE_NAME}
-      - MARIADB_USER=${DATABASE_USER}
-      - MARIADB_PASSWORD=${DATABASE_PASS}
+      - MARIADB_DATABASE=${DATABASE_NAME_CORE}
+      - MARIADB_USER=${DATABASE_USER_CORE}
+      - MARIADB_PASSWORD=${DATABASE_PASS_CORE}
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --init-connect='SET NAMES UTF8;'
     ulimits:
       memlock: "262144"
@@ -78,6 +77,10 @@ services:
       - db-data:/var/lib/mysql
     networks:
       - backend
+    configs:
+      - source: init_db
+        target: /docker-entrypoint-initdb.d/second.sh
+        mode: 0644
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       start_period: 10s
@@ -92,3 +95,13 @@ networks:
   frontend:
   backend:
     external: false
+
+configs:
+  init_db:
+    content: |
+      mysql_note "Creating web database and user"
+      docker_process_sql <<'EOF'
+          CREATE DATABASE `${DATABASE_NAME_WEB}`;
+          CREATE USER '${DATABASE_USER_WEB}'@'%' IDENTIFIED BY '${DATABASE_PASS_WEB}';
+          GRANT ALL PRIVILEGES ON `${DATABASE_NAME_WEB}`.* TO '${DATABASE_USER_WEB}'@'%';
+      EOF

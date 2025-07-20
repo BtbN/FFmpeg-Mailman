@@ -30,14 +30,14 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -y update && \
     apt-get -y full-upgrade && \
     apt-get -y install --no-install-recommends \
-        zlib1g sassc libmariadb3 sudo nano && \
+        sassc node-less gettext zlib1g libmariadb3 sudo nano && \
     apt-get -y clean && \
     rm -rf /var/lib/apt/lists/*
 
 RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel
 
 RUN --mount=from=builder,source=/out,target=/wheels \
-    python3 -m pip install --no-cache-dir --use-pep517 /wheels/*.whl xapian-haystack mailman mailman-web mailman-hyperkitty
+    python3 -m pip install --no-cache-dir --use-pep517 /wheels/*.whl xapian-haystack diskcache mailman mailman-web mailman-hyperkitty
 
 ARG UID=1099
 ARG GID=1099
@@ -48,8 +48,8 @@ RUN mkdir /opt/mailman /opt/mailman-web && \
     chown mailman:mailman /opt/mailman /opt/mailman-web
 
 COPY entrypoint.sh /entrypoint.sh
-COPY mailman.cfg mailman-postfix.cfg mailman-hyperkitty.cfg mailman-gunicorn.cfg uwsgi.ini /etc/
-COPY mailman.cfg /etc/mailman.cfg.proto
-COPY mailman-hyperkitty.cfg /etc/mailman-hyperkitty.cfg.proto
+COPY mailman.cfg mailman-postfix.cfg mailman-hyperkitty.cfg mailman-gunicorn.cfg uwsgi.ini settings.py /etc/mailman3/
+COPY mailman.cfg /etc/mailman3/mailman.cfg.proto
+COPY mailman-hyperkitty.cfg /etc/mailman3/mailman-hyperkitty.cfg.proto
 
 ENTRYPOINT ["/entrypoint.sh"]
