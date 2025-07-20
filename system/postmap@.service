@@ -1,0 +1,6 @@
+[Unit]
+Description=Run postmap on %f
+
+[Service]
+Type=oneshot
+ExecStart=postmap %f

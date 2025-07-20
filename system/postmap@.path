@@ -1,0 +1,8 @@
+[Unit]
+Description=Watch %f for changes and run postmap
+
+[Path]
+PathChanged=%f
+
+[Install]
+WantedBy=multi-user.target
