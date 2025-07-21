@@ -207,6 +207,8 @@ setup_web() {
 
     sudo -n -u mailman -- mailman-web collectstatic --noinput --clear
     sudo -n -u mailman -- mailman-web compress --force
+
+    echo "SITE_ID = 0" >> /etc/mailman3/settings_docker.py
 }
 
 run_core() {
