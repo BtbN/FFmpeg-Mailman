@@ -39,6 +39,9 @@ RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel
 RUN --mount=from=builder,source=/out,target=/wheels \
     python3 -m pip install --no-cache-dir --use-pep517 /wheels/*.whl xapian-haystack diskcache mailman mailman-web mailman-hyperkitty
 
+# This line will break once the next version of hyperkitty is release, which supports latest mistune.
+RUN python3 -m pip show hyperkitty | grep '^Version: 1.3.12$' && python3 -m pip install 'mistune<3.1' || exit 1
+
 ARG UID=1099
 ARG GID=1099
 RUN groupadd -g "${GID}" mailman && \
