@@ -9,6 +9,7 @@ from mailman_web.settings.mailman import *
 DEBUG = False
 
 SITE_ID = 1
+FILTER_VHOST = True
 
 STATIC_ROOT = '/opt/mailman-web/static'
 STATIC_URL = '/static/'
