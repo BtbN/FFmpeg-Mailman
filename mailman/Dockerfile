@@ -30,7 +30,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -y update && \
     apt-get -y full-upgrade && \
     apt-get -y install --no-install-recommends \
-        sassc node-less gettext zlib1g libmariadb3 logrotate sudo nano && \
+        sassc node-less gettext zlib1g libmariadb3 logrotate sudo nano git public-inbox libplack-middleware-reverseproxy-perl && \
     apt-get -y clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -39,7 +39,9 @@ RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel
 RUN --mount=from=builder,source=/out,target=/wheels \
     python3 -m pip install --no-cache-dir --use-pep517 /wheels/*.whl xapian-haystack diskcache mailman mailman-web mailman-hyperkitty
 
-# This line will break once the next version of hyperkitty is release, which supports latest mistune.
+RUN python3 -m pip install --no-cache-dir git+https://github.com/BtbN/mailman-public-inbox@main
+
+# This line will break once the next version of hyperkitty is released, which supports latest mistune.
 RUN python3 -m pip show hyperkitty | grep '^Version: 1.3.12$' && python3 -m pip install 'mistune<3.1' || exit 1
 
 ARG UID=1099
