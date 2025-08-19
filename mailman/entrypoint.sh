@@ -246,6 +246,21 @@ run_web() {
     exec sudo -n --preserve-env=MAILMAN_WEB_CONFIG -u mailman -- uwsgi --ini /etc/mailman3/uwsgi.ini "$@"
 }
 
+init_pihttpd_reloader() {
+    (
+        echo "Monitoring for pihttpd config changes"
+        while true; do
+            if [[ ! -f /opt/public-inbox/.public-inbox/config ]]; then
+                sleep 60
+            elif inotifywait -qq -e close_write /opt/public-inbox/.public-inbox/config; then
+                echo "Reloading pihttpd"
+                pkill -f -HUP public-inbox-httpd
+                sleep 1
+            fi
+        done
+    ) &
+}
+
 run_pihttpd() {
     cd /opt/public-inbox
     export PERL_INLINE_DIRECTORY=/var/cache/pi-inline-c
@@ -268,6 +283,7 @@ elif [[ "$1" == "web" ]]; then
 elif [[ "$1" == "pihttpd" ]]; then
     shift
     setup_pihttpd
+    init_pihttpd_reloader
     run_pihttpd "$@"
 elif [[ "$1" == "logrotate" ]]; then
     shift

@@ -30,7 +30,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -y update && \
     apt-get -y full-upgrade && \
     apt-get -y install --no-install-recommends \
-        sassc node-less gettext zlib1g libmariadb3 logrotate sudo nano git curl build-essential \
+        sassc node-less gettext zlib1g libmariadb3 \
+        inotify-tools logrotate procps sudo less nano git curl build-essential \
         libdbd-sqlite3-perl libemail-address-xs-perl libemail-mime-perl libinline-c-perl \
         libmail-imapclient-perl libnet-server-perl libparse-recdescent-perl \
         libplack-perl libsearch-xapian-perl libsocket-msghdr-perl libtimedate-perl \
