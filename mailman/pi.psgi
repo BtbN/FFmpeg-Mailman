@@ -10,5 +10,8 @@ $www->preload;
 builder {
 	enable 'ReverseProxy';
 	enable 'Head';
-	mount '@@@MOUNTPOINT@@@' => sub { $www->call(@_) };
+	mount '@@@MOUNTPOINT@@@' => sub {
+		$_[0]->{PATH_INFO} ||= '/';
+		return $www->call(@_);
+	};
 };
