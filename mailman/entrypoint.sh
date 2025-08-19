@@ -241,8 +241,9 @@ run_web() {
 run_pihttpd() {
     cd /opt/public-inbox
     export PI_CONFIG=/opt/public-inbox/.public-inbox/config
+    export PI_DIR=/opt/public-inbox/.public-inbox
     export HOME=/opt/public-inbox
-    exec sudo -n --preserve-env=PI_CONFIG,HOME -u mailman -- public-inbox-httpd -l http://0.0.0.0:8080 "$@"
+    exec sudo -n --preserve-env=PI_CONFIG,PI_DIR,HOME -u mailman -- public-inbox-httpd -l http://0.0.0.0:8080 "$@"
 }
 
 if [[ "$1" == "core" ]]; then
@@ -266,5 +267,6 @@ else
     export MAILMAN_CONFIG_FILE=/etc/mailman3/mailman.cfg
     export MAILMAN_WEB_CONFIG=/etc/mailman3/settings.py
     export PI_CONFIG=/opt/public-inbox/.public-inbox/config
-    exec sudo -n --preserve-env=MAILMAN_CONFIG_FILE,MAILMAN_WEB_CONFIG,PI_CONFIG -u mailman -- "$@"
+    export PI_DIR=/opt/public-inbox/.public-inbox
+    exec sudo -n --preserve-env=MAILMAN_CONFIG_FILE,MAILMAN_WEB_CONFIG,PI_CONFIG,PI_DIR -u mailman -- "$@"
 fi
