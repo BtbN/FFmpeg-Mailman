@@ -49,13 +49,14 @@ ARG GID=1099
 RUN groupadd -g "${GID}" mailman && \
     useradd -g "${GID}" -u "${UID}" -s /bin/bash -m -d /home/mailman mailman
 
-RUN mkdir /opt/mailman /opt/mailman-web && \
-    chown mailman:mailman /opt/mailman /opt/mailman-web
+RUN mkdir /opt/mailman /opt/mailman-web /opt/public-inbox && \
+    chown mailman:mailman /opt/mailman /opt/mailman-web /opt/public-inbox
 
 COPY entrypoint.sh /entrypoint.sh
 COPY logrotate.sh /logrotate.sh
-COPY mailman.cfg mailman-postfix.cfg mailman-hyperkitty.cfg mailman-gunicorn.cfg uwsgi.ini settings.py logrotate.conf /etc/mailman3/
+COPY mailman.cfg mailman-postfix.cfg mailman-hyperkitty.cfg mailman-gunicorn.cfg mailman-public-inbox.cfg uwsgi.ini settings.py logrotate.conf /etc/mailman3/
 COPY mailman.cfg /etc/mailman3/mailman.cfg.proto
 COPY mailman-hyperkitty.cfg /etc/mailman3/mailman-hyperkitty.cfg.proto
+COPY mailman-public-inbox.cfg /etc/mailman3/mailman-public-inbox.cfg.proto
 
 ENTRYPOINT ["/entrypoint.sh"]

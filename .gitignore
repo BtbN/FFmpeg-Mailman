@@ -1,5 +1,6 @@
 .env
 core/
 web/
+public-inbox/
 backup/
 backup.tar.gz

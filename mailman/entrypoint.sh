@@ -19,6 +19,7 @@ ensure_mysql() {
 setup_core() {
     cp /etc/mailman3/mailman.cfg{.proto,}
     cp /etc/mailman3/mailman-hyperkitty.cfg{.proto,}
+    cp /etc/mailman3/mailman-public-inbox.cfg{.proto,}
 
     if [[ -n "$DATABASE_USER" && -n "$DATABASE_PASS" && -n "$DATABASE_NAME" ]]; then
         {
@@ -80,6 +81,16 @@ setup_core() {
         } >> /etc/mailman3/mailman-hyperkitty.cfg
     else
         echo "Missing site-owner"
+        exit 1
+    fi
+
+    if [[ -n "$PUBLIC_INBOX_HOST" ]]; then
+        {
+            echo "base_url: ${PUBLIC_INBOX_HOST}"
+            echo
+        } >> /etc/mailman3/mailman-public-inbox.cfg
+    else
+        echo "Missing public-inbox host"
         exit 1
     fi
 
@@ -211,16 +222,27 @@ setup_web() {
     echo "SITE_ID = 0" >> /etc/mailman3/settings_docker.py
 }
 
+setup_pihttpd() {
+    chown -R mailman:mailman /opt/public-inbox
+}
+
 run_core() {
     cd /opt/mailman
     export MAILMAN_CONFIG_FILE=/etc/mailman3/mailman.cfg
-    exec sudo -n -u mailman -- master --force "$@"
+    exec sudo -n --preserve-env=MAILMAN_CONFIG_FILE -u mailman -- master --force "$@"
 }
 
 run_web() {
     cd /opt/mailman-web
     export MAILMAN_WEB_CONFIG=/etc/mailman3/settings.py
-    exec sudo -n -u mailman -- uwsgi --ini /etc/mailman3/uwsgi.ini "$@"
+    exec sudo -n --preserve-env=MAILMAN_WEB_CONFIG -u mailman -- uwsgi --ini /etc/mailman3/uwsgi.ini "$@"
+}
+
+run_pihttpd() {
+    cd /opt/public-inbox
+    export PI_CONFIG=/opt/public-inbox/.public-inbox/config
+    export HOME=/opt/public-inbox
+    exec sudo -n --preserve-env=PI_CONFIG,HOME -u mailman -- public-inbox-httpd -l http://0.0.0.0:8080 "$@"
 }
 
 if [[ "$1" == "core" ]]; then
@@ -233,11 +255,16 @@ elif [[ "$1" == "web" ]]; then
     ensure_mysql
     setup_web
     run_web "$@"
+elif [[ "$1" == "pihttpd" ]]; then
+    shift
+    setup_pihttpd
+    run_pihttpd "$@"
 elif [[ "$1" == "logrotate" ]]; then
     shift
     exec sudo -n -u mailman -- /logrotate.sh "$@"
 else
     export MAILMAN_CONFIG_FILE=/etc/mailman3/mailman.cfg
     export MAILMAN_WEB_CONFIG=/etc/mailman3/settings.py
+    export PI_CONFIG=/opt/public-inbox/.public-inbox/config
     exec sudo -n -u mailman -- "$@"
 fi
