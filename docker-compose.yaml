@@ -1,8 +1,13 @@
 services:
-  core:
+  builder:
     image: mailman:latest
     pull_policy: build
     build: mailman
+    command: "true"
+
+  core:
+    image: mailman:latest
+    pull_policy: never
     command: core
     restart: unless-stopped
     volumes:
@@ -10,8 +15,11 @@ services:
       - ./public-inbox:/opt/public-inbox/
     stop_grace_period: 30s
     depends_on:
+      builder:
+        condition: service_completed_successfully
       db:
         condition: service_healthy
+        restart: true
     environment:
       - DATABASE_NAME=${DATABASE_NAME_CORE}
       - DATABASE_USER=${DATABASE_USER_CORE}
@@ -34,13 +42,15 @@ services:
 
   web:
     image: mailman:latest
-    pull_policy: build
-    build: mailman
+    pull_policy: never
     command: web
     restart: unless-stopped
     depends_on:
+      builder:
+        condition: service_completed_successfully
       db:
         condition: service_healthy
+        restart: true
     volumes:
       - ./web:/opt/mailman-web/
     environment:
@@ -64,10 +74,12 @@ services:
 
   public-inbox:
     image: mailman:latest
-    pull_policy: build
-    build: mailman
+    pull_policy: never
     command: pihttpd
     restart: unless-stopped
+    depends_on:
+      builder:
+        condition: service_completed_successfully
     environment:
       - PUBLIC_INBOX_WEBMOUNT=${PUBLIC_INBOX_WEBMOUNT}
     volumes:
@@ -79,10 +91,12 @@ services:
 
   logrotate:
     image: mailman:latest
-    pull_policy: build
-    build: mailman
+    pull_policy: never
     command: logrotate
     restart: unless-stopped
+    depends_on:
+      builder:
+        condition: service_completed_successfully
     volumes:
       - ./web:/opt/mailman-web/
       - ./core:/opt/mailman/
