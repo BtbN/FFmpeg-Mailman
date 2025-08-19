@@ -30,7 +30,12 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -y update && \
     apt-get -y full-upgrade && \
     apt-get -y install --no-install-recommends \
-        sassc node-less gettext zlib1g libmariadb3 logrotate sudo nano git lei public-inbox libplack-middleware-reverseproxy-perl && \
+        sassc node-less gettext zlib1g libmariadb3 logrotate sudo nano git curl build-essential \
+        libdbd-sqlite3-perl libemail-address-xs-perl libemail-mime-perl libinline-c-perl \
+        libmail-imapclient-perl libnet-server-perl libparse-recdescent-perl \
+        libplack-perl libsearch-xapian-perl libsocket-msghdr-perl libtimedate-perl \
+        libbsd-resource-perl libhighlight-perl liblinux-inotify2-perl libnet-server-perl \
+        liburi-perl xapian-tools libplack-middleware-reverseproxy-perl && \
     apt-get -y clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -39,10 +44,15 @@ RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel
 RUN --mount=from=builder,source=/out,target=/wheels \
     python3 -m pip install --no-cache-dir --use-pep517 /wheels/*.whl xapian-haystack diskcache mailman mailman-web mailman-hyperkitty
 
-RUN python3 -m pip install --no-cache-dir git+https://github.com/BtbN/mailman-public-inbox@main
-
 # This line will break once the next version of hyperkitty is released, which supports latest mistune.
 RUN python3 -m pip show hyperkitty | grep '^Version: 1.3.12$' && python3 -m pip install 'mistune<3.1' || exit 1
+
+RUN git clone --filter=blob:none https://public-inbox.org/public-inbox.git pi && cd pi && \
+    perl Makefile.PL PREFIX=/usr && \
+    make && make install && \
+    cd .. && rm -rf pi
+
+RUN python3 -m pip install --no-cache-dir git+https://github.com/BtbN/mailman-public-inbox@main
 
 ARG UID=1099
 ARG GID=1099

@@ -248,10 +248,11 @@ run_web() {
 
 run_pihttpd() {
     cd /opt/public-inbox
+    export PERL_INLINE_DIRECTORY=/var/cache/pi-inline-c
     export PI_CONFIG=/opt/public-inbox/.public-inbox/config
     export PI_DIR=/opt/public-inbox/.public-inbox
     export HOME=/opt/public-inbox
-    exec sudo -n --preserve-env=PI_CONFIG,PI_DIR,HOME -u mailman -- public-inbox-httpd -l http://0.0.0.0:8080 "$@" /etc/mailman3/pi.psgi
+    exec sudo -n --preserve-env=PERL_INLINE_DIRECTORY,PI_CONFIG,PI_DIR,HOME -u mailman -- public-inbox-httpd -l http://0.0.0.0:8080 -W4 -X4 "$@" /etc/mailman3/pi.psgi
 }
 
 if [[ "$1" == "core" ]]; then

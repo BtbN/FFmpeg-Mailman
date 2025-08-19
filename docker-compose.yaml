@@ -82,6 +82,8 @@ services:
         condition: service_completed_successfully
     environment:
       - PUBLIC_INBOX_WEBMOUNT=${PUBLIC_INBOX_WEBMOUNT}
+    tmpfs:
+      - /var/cache/pi-inline-c:rw,mode=1777,nosuid,nodev,noatime
     volumes:
       - ./public-inbox:/opt/public-inbox/
     ports:
