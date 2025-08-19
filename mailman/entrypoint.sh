@@ -224,6 +224,14 @@ setup_web() {
 
 setup_pihttpd() {
     chown -R mailman:mailman /opt/public-inbox
+    cp /etc/mailman3/pi.psgi{.proto,}
+
+    if [[ -n "$PUBLIC_INBOX_WEBMOUNT" ]]; then
+        sed -i -e "s|@@@MOUNTPOINT@@@|${PUBLIC_INBOX_WEBMOUNT}|g" /etc/mailman3/pi.psgi
+    else
+        echo "Mounting public-inbox at /"
+        sed -i -e "s|@@@MOUNTPOINT@@@|/|g" /etc/mailman3/pi.psgi
+    fi
 }
 
 run_core() {
@@ -243,7 +251,7 @@ run_pihttpd() {
     export PI_CONFIG=/opt/public-inbox/.public-inbox/config
     export PI_DIR=/opt/public-inbox/.public-inbox
     export HOME=/opt/public-inbox
-    exec sudo -n --preserve-env=PI_CONFIG,PI_DIR,HOME -u mailman -- public-inbox-httpd -l http://0.0.0.0:8080 "$@"
+    exec sudo -n --preserve-env=PI_CONFIG,PI_DIR,HOME -u mailman -- public-inbox-httpd -l http://0.0.0.0:8080 "$@" /etc/mailman3/pi.psgi
 }
 
 if [[ "$1" == "core" ]]; then

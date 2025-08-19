@@ -68,6 +68,8 @@ services:
     build: mailman
     command: pihttpd
     restart: unless-stopped
+    environment:
+      - PUBLIC_INBOX_WEBMOUNT=${PUBLIC_INBOX_WEBMOUNT}
     volumes:
       - ./public-inbox:/opt/public-inbox/
     ports:

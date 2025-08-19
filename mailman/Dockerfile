@@ -54,9 +54,10 @@ RUN mkdir /opt/mailman /opt/mailman-web /opt/public-inbox && \
 
 COPY entrypoint.sh /entrypoint.sh
 COPY logrotate.sh /logrotate.sh
-COPY mailman.cfg mailman-postfix.cfg mailman-hyperkitty.cfg mailman-gunicorn.cfg mailman-public-inbox.cfg uwsgi.ini settings.py logrotate.conf /etc/mailman3/
+COPY mailman.cfg mailman-postfix.cfg mailman-hyperkitty.cfg mailman-gunicorn.cfg mailman-public-inbox.cfg uwsgi.ini settings.py logrotate.conf pi.psgi /etc/mailman3/
 COPY mailman.cfg /etc/mailman3/mailman.cfg.proto
 COPY mailman-hyperkitty.cfg /etc/mailman3/mailman-hyperkitty.cfg.proto
 COPY mailman-public-inbox.cfg /etc/mailman3/mailman-public-inbox.cfg.proto
+COPY pi.psgi /etc/mailman3/pi.psgi.proto
 
 ENTRYPOINT ["/entrypoint.sh"]
