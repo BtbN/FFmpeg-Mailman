@@ -12,5 +12,6 @@ docker compose exec -T db mariadb-dump --opt --single-transaction --extended-ins
 
 cp -a core backup/core
 cp -a web backup/web
+cp -a public-inbox backup/public-inbox
 
 tar czf backup.tar.gz backup
