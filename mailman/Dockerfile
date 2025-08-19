@@ -30,7 +30,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -y update && \
     apt-get -y full-upgrade && \
     apt-get -y install --no-install-recommends \
-        sassc node-less gettext zlib1g libmariadb3 logrotate sudo nano git public-inbox libplack-middleware-reverseproxy-perl && \
+        sassc node-less gettext zlib1g libmariadb3 logrotate sudo nano git lei public-inbox libplack-middleware-reverseproxy-perl && \
     apt-get -y clean && \
     rm -rf /var/lib/apt/lists/*
 
