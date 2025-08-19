@@ -266,5 +266,5 @@ else
     export MAILMAN_CONFIG_FILE=/etc/mailman3/mailman.cfg
     export MAILMAN_WEB_CONFIG=/etc/mailman3/settings.py
     export PI_CONFIG=/opt/public-inbox/.public-inbox/config
-    exec sudo -n -u mailman -- "$@"
+    exec sudo -n --preserve-env=MAILMAN_CONFIG_FILE,MAILMAN_WEB_CONFIG,PI_CONFIG -u mailman -- "$@"
 fi
