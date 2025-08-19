@@ -21,7 +21,7 @@ cp "/var/lib/mailman/archives/private/${LIST_NAME,,}.mbox/${LIST_NAME,,}.mbox" w
 chmod a+rx core/list-import
 chmod a+r web/import.mbox core/list-import/*
 
-docker compose exec -T -u mailman core mailman create "${LIST_NAME}@${DOMAIN_NAME}"
-docker compose exec -T -u mailman core mailman import21 "${LIST_NAME}@${DOMAIN_NAME}" /opt/mailman/list-import/config.pck
-docker compose exec -T -u mailman web mailman-web hyperkitty_import -l "${LIST_NAME}@${DOMAIN_NAME}" /opt/mailman-web/import.mbox
-docker compose exec -T -u mailman web mailman-web update_index_one_list "${LIST_NAME}@${DOMAIN_NAME}"
+docker compose exec -T -u mailman core /entrypoint.sh mailman create "${LIST_NAME}@${DOMAIN_NAME}"
+docker compose exec -T -u mailman core /entrypoint.sh mailman import21 "${LIST_NAME}@${DOMAIN_NAME}" /opt/mailman/list-import/config.pck
+docker compose exec -T -u mailman web /entrypoint.sh mailman-web hyperkitty_import -l "${LIST_NAME}@${DOMAIN_NAME}" /opt/mailman-web/import.mbox
+docker compose exec -T -u mailman web /entrypoint.sh mailman-web update_index_one_list "${LIST_NAME}@${DOMAIN_NAME}"
