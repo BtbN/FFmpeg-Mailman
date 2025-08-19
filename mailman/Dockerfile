@@ -52,7 +52,7 @@ RUN git clone --filter=blob:none https://public-inbox.org/public-inbox.git pi &&
     make && make install && \
     cd .. && rm -rf pi
 
-RUN python3 -m pip install --no-cache-dir git+https://github.com/BtbN/mailman-public-inbox@main
+RUN python3 -m pip install --no-cache-dir git+https://github.com/BtbN/mailman-public-inbox@cb4c75b7e74bee530ad506e1c8a46f4bc064335e
 
 ARG UID=1099
 ARG GID=1099
