@@ -249,13 +249,16 @@ run_web() {
 init_pihttpd_reloader() {
     (
         echo "Monitoring for pihttpd config changes"
-        while true; do
-            if [[ ! -f /opt/public-inbox/.public-inbox/config ]]; then
-                sleep 60
-            elif inotifywait -qq -e close_write /opt/public-inbox/.public-inbox/config; then
+
+        while [[ ! -e /opt/public-inbox/.public-inbox ]]; do
+            sleep 60
+        done
+
+        inotifywait -m -q --format '%e %f' -e moved_to -e close_write /opt/public-inbox/.public-inbox |
+        while read -r events file; do
+            if [[ "$file" == "config" ]]; then
                 echo "Reloading pihttpd"
                 pkill -f -HUP public-inbox-httpd
-                sleep 1
             fi
         done
     ) &
