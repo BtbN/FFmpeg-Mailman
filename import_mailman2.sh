@@ -16,8 +16,8 @@ trap "rm -rf core/list-import web/import.mbox public-inbox/import.mbox" EXIT
 set -x
 
 cp -r "/var/lib/mailman/lists/${LIST_NAME,,}" core/list-import
-cp "/var/lib/mailman/archives/private/${LIST_NAME,,}.mbox/${LIST_NAME,,}.mbox" web/import.mbox
-cp "/var/lib/mailman/archives/private/${LIST_NAME,,}.mbox/${LIST_NAME,,}.mbox" public-inbox/import.mbox
+cp -l "/var/lib/mailman/archives/private/${LIST_NAME,,}.mbox/${LIST_NAME,,}.mbox" web/import.mbox
+cp -l "/var/lib/mailman/archives/private/${LIST_NAME,,}.mbox/${LIST_NAME,,}.mbox" public-inbox/import.mbox
 
 chmod a+rx core/list-import
 chmod a+r web/import.mbox core/list-import/*
