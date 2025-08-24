@@ -1,26 +1,33 @@
 ARG PYTHON_VERSION="3.12"
 FROM python:${PYTHON_VERSION}-slim AS builder
 
-RUN export DEBIAN_FRONTEND=noninteractive && \
+ENV DEBIAN_FRONTEND=noninteractive
+RUN sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/*.sources && \
     apt-get -y update && \
     apt-get -y full-upgrade && \
     apt-get -y install --no-install-recommends \
-        curl build-essential pkgconf zlib1g-dev default-libmysqlclient-dev && \
+        curl build-essential pkgconf zlib1g-dev default-libmysqlclient-dev libxapian-dev && \
     apt-get -y clean && \
     rm -rf /var/lib/apt/lists/*
 
+RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel build sphinx
+
+RUN mkdir /tmp/build && cd /tmp/build && \
+    apt-get -y update && \
+    apt-get -y source python3-xapian && \
+    cd xapian-bindings-* && \
+    dpkg-source --before-build . && \
+    ./configure --with-python3 && \
+    make -j$(nproc) && \
+    make install DESTDIR=/out_xapian && \
+    rm -r /out_xapian/usr/local/share && \
+    python3 -m compileall /out_xapian/usr/local/lib && \
+    apt-get -y clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/build
+
 RUN mkdir /out
 WORKDIR /out
-
-RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel build
-
-ARG XAPIAN_VERSION="1.4.29"
-RUN curl -L https://raw.githubusercontent.com/notanumber/xapian-haystack/master/xapian_wheel_builder.sh -o xapian_wheel_builder.sh && \
-    sh ./xapian_wheel_builder.sh "${XAPIAN_VERSION}" && \
-    rm ./xapian_wheel_builder.sh
-
 RUN python3 -m pip wheel --no-cache-dir --no-binary :all: --use-pep517 uwsgi
-
 RUN python3 -m pip wheel --no-cache-dir --no-binary :all: mysqlclient
 
 
@@ -41,6 +48,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     rm -rf /var/lib/apt/lists/*
 
 RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel
+
+COPY --from=builder /out_xapian/ /
 
 RUN --mount=from=builder,source=/out,target=/wheels \
     python3 -m pip install --no-cache-dir --use-pep517 /wheels/*.whl xapian-haystack diskcache mailman mailman-web mailman-hyperkitty
