@@ -27,6 +27,8 @@ HAYSTACK_CONNECTIONS = {
     },
 }
 
+XAPIAN_LONG_TERM_METHOD = 'hash'
+
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'host.docker.internal'
 EMAIL_PORT = 25

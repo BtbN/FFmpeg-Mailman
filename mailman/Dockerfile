@@ -57,6 +57,10 @@ RUN --mount=from=builder,source=/out,target=/wheels \
 # This line will break once the next version of hyperkitty is released, which supports latest mistune.
 RUN python3 -m pip show hyperkitty | grep '^Version: 1.3.12$' && python3 -m pip install 'mistune<3.1' || exit 1
 
+RUN cd /usr/local/lib/python3.??/site-packages && \
+    curl https://github.com/BtbN/xapian-haystack/commit/bc75788e55b0d9c92e6290b3dc836ebccad417cf.patch | patch --no-backup-if-mismatch -p1 && \
+    python3 -m compileall xapian_backend.py
+
 RUN git clone --filter=blob:none https://public-inbox.org/public-inbox.git pi && cd pi && \
     perl Makefile.PL PREFIX=/usr && \
     make && make install && \
