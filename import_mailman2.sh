@@ -10,7 +10,7 @@ if [[ -z "$LIST_NAME" || -z "$DOMAIN_NAME" ]]; then
         exit 1
 fi
 
-rm -rf core/list-import web/import.mbox
+rm -rf core/list-import web/import.mbox public-inbox/import.mbox
 trap "rm -rf core/list-import web/import.mbox public-inbox/import.mbox" EXIT
 
 set -x
