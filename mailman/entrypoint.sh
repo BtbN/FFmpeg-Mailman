@@ -94,6 +94,11 @@ setup_core() {
         exit 1
     fi
 
+    shopt -s nullglob
+    for f in /opt/mailman/etc/*.cfg; do
+        cat "$f" >> "/etc/mailman3/$(basename "$f")"
+    done
+
     chown -R mailman:mailman /opt/mailman
 
     cd /opt/mailman
