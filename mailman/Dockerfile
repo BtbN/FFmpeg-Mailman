@@ -52,7 +52,7 @@ RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel
 COPY --from=builder /out_xapian/ /
 
 RUN --mount=from=builder,source=/out,target=/wheels \
-    python3 -m pip install --no-cache-dir --use-pep517 /wheels/*.whl xapian-haystack diskcache mailman mailman-web mailman-hyperkitty
+    python3 -m pip install --no-cache-dir --use-pep517 /wheels/*.whl tzdata xapian-haystack diskcache mailman mailman-web mailman-hyperkitty
 
 # This line will break once the next version of hyperkitty is released, which supports latest mistune.
 RUN python3 -m pip show hyperkitty | grep '^Version: 1.3.12$' && python3 -m pip install 'mistune<3.1' || exit 1
